@@ -1,6 +1,15 @@
 const util = require("util");
 const db = require("../configs/config");
 
+const NodeGeoCoder = require("node-geocoder");
+
+const geocoderOption = {
+  provider: "opencage",
+  apiKey: "8378776bbf434723bda88c2974a58616",
+};
+
+const geoCoder = NodeGeoCoder(geocoderOption);
+
 const queryAsync = util.promisify(db.query).bind(db);
 
 exports.postCarpoolCreate = async (req, res) => {
@@ -27,20 +36,47 @@ exports.postCarpoolCreate = async (req, res) => {
       res.status(400).json({ error: "All fields must be provided" });
       return;
     } else {
+      const [originInfo, destinationInfo] = await Promise.all([
+        geoCoder.geocode(origin),
+        geoCoder.geocode(destination),
+      ]);
+
+      console.log(originInfo, destinationInfo);
+
+      if (
+        !originInfo ||
+        originInfo.length === 0 ||
+        !destinationInfo ||
+        destinationInfo.length === 0
+      ) {
+        res
+          .status(400)
+          .json({ error: "Geocoding failed for one or both locations" });
+        return;
+      }
+
+      const originCoordinates = originInfo[0];
+      const destinationCoordinates = destinationInfo[0];
+      console.log(originCoordinates, destinationCoordinates);
+
       const query =
-        "INSERT INTO carpool (name, phoneNumber, carpoolDate, origin, destination, seatsAvailable, details) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        "INSERT INTO carpool (name, phoneNumber, carpoolDate, origin, destination, originLatitude, originLongitude, destinationLatitude, destinationLongitude, seatsAvailable, details) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
       const values = [
         name,
         phoneNumber,
         date,
         origin,
         destination,
+        originCoordinates.latitude,
+        originCoordinates.longitude,
+        destinationCoordinates.latitude,
+        destinationCoordinates.longitude,
         seatsAvailable,
         details,
       ];
 
       const results = await queryAsync(query, values);
-
+      console.log(results);
       const carpoolRequestId = results.insertId;
       res.status(201).json({ id: carpoolRequestId });
     }
