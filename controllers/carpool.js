@@ -10,26 +10,40 @@ exports.postCarpoolCreate = (req, res) => {
     seatsAvailable,
     details,
   } = req.body;
-  const query =
-    "INSERT INTO carpool (name,phoneNumber,carpoolDate, origin, destination, seatsAvailable, details) VALUES (?,?,?, ?, ?, ?, ?)";
-  const values = [
-    name,
-    phoneNumber,
-    date,
-    origin,
-    destination,
-    seatsAvailable,
-    details,
-  ];
 
-  db.query(query, values, (err, results) => {
-    if (err) {
-      res.status(400).json({ error: err.message });
-    } else {
-      const carpoolRequestId = results.insertId;
-      res.status(201).json({ id: carpoolRequestId });
-    }
-  });
+  if (
+    !name ||
+    !phoneNumber ||
+    !date ||
+    !origin ||
+    !destination ||
+    !seatsAvailable ||
+    !details
+  ) {
+    res.status(400).json({ error: "All fields must be provided" });
+    return;
+  } else {
+    const query =
+      "INSERT INTO carpool (name,phoneNumber,carpoolDate, origin, destination, seatsAvailable, details) VALUES (?,?,?, ?, ?, ?, ?)";
+    const values = [
+      name,
+      phoneNumber,
+      date,
+      origin,
+      destination,
+      seatsAvailable,
+      details,
+    ];
+
+    db.query(query, values, (err, results) => {
+      if (err) {
+        res.status(400).json({ error: err.message });
+      } else {
+        const carpoolRequestId = results.insertId;
+        res.status(201).json({ id: carpoolRequestId });
+      }
+    });
+  }
 };
 
 exports.getCarpoolSearch = (req, res) => {
@@ -76,6 +90,6 @@ exports.deleteCarpool = (req, res) => {
       res.status(404).json({ error: "Record not found" });
       return;
     }
-    res.status(200).json({ message: "Entrry Deleted Succesfully" });
+    res.status(200).json({ message: "Entry Deleted Succesfully" });
   });
 };

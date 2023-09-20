@@ -10,6 +10,6 @@ router.get("/search", carpoolController.getCarpoolSearch);
 
 router.get("/search-all", carpoolController.getAllCarpool);
 
-router.delete("/delete", carpoolController.deleteCarpool);
+router.delete("/delete/:id", carpoolController.deleteCarpool);
 
 module.exports = router;
