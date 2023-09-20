@@ -24,82 +24,81 @@ exports.postCarpoolCreate = async (req, res) => {
       details,
     } = req.body;
 
+    // if (
+    //   !name ||
+    //   !phoneNumber ||
+    //   !date ||
+    //   !origin ||
+    //   !destination ||
+    //   !seatsAvailable ||
+    //   !details
+    // ) {
+    //   res.status(400).json({ error: "All fields must be provided" });
+    //   return;
+    // } else {
+    const [originInfo, destinationInfo] = await Promise.all([
+      geoCoder.geocode(origin),
+      geoCoder.geocode(destination),
+    ]);
+
+    console.log(originInfo, destinationInfo);
+
     if (
-      !name ||
-      !phoneNumber ||
-      !date ||
-      !origin ||
-      !destination ||
-      !seatsAvailable ||
-      !details
+      !originInfo ||
+      originInfo.length === 0 ||
+      !destinationInfo ||
+      destinationInfo.length === 0
     ) {
-      res.status(400).json({ error: "All fields must be provided" });
+      res
+        .status(400)
+        .json({ error: "Geocoding failed for one or both locations" });
       return;
-    } else {
-      const [originInfo, destinationInfo] = await Promise.all([
-        geoCoder.geocode(origin),
-        geoCoder.geocode(destination),
-      ]);
-
-      console.log(originInfo, destinationInfo);
-
-      if (
-        !originInfo ||
-        originInfo.length === 0 ||
-        !destinationInfo ||
-        destinationInfo.length === 0
-      ) {
-        res
-          .status(400)
-          .json({ error: "Geocoding failed for one or both locations" });
-        return;
-      }
-
-      const originCoordinates = originInfo[0];
-      const destinationCoordinates = destinationInfo[0];
-      console.log(originCoordinates, destinationCoordinates);
-
-      const query =
-        "INSERT INTO carpool (name, phoneNumber, carpoolDate, origin, destination, originLatitude, originLongitude, destinationLatitude, destinationLongitude, seatsAvailable, details) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-      const values = [
-        name,
-        phoneNumber,
-        date,
-        origin,
-        destination,
-        originCoordinates.latitude,
-        originCoordinates.longitude,
-        destinationCoordinates.latitude,
-        destinationCoordinates.longitude,
-        seatsAvailable,
-        details,
-      ];
-
-      const results = await queryAsync(query, values);
-      console.log(results);
-      const carpoolRequestId = results.insertId;
-      res.status(201).json({ id: carpoolRequestId });
     }
+
+    const originCoordinates = originInfo[0];
+    const destinationCoordinates = destinationInfo[0];
+    console.log(originCoordinates, destinationCoordinates);
+
+    const query =
+      "INSERT INTO carpool (name, phoneNumber, carpoolDate, origin, destination, originLatitude, originLongitude, destinationLatitude, destinationLongitude, seatsAvailable, details) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    const values = [
+      name,
+      phoneNumber,
+      date,
+      origin,
+      destination,
+      originCoordinates.latitude,
+      originCoordinates.longitude,
+      destinationCoordinates.latitude,
+      destinationCoordinates.longitude,
+      seatsAvailable,
+      details,
+    ];
+
+    const results = await queryAsync(query, values);
+    console.log(results);
+    const carpoolRequestId = results.insertId;
+    res.status(201).json({ id: carpoolRequestId, results });
   } catch (err) {
     console.error(err);
-    res.status(400).json({ error: err.message });
+    res.send.status(400).json({ error: err.message });
   }
 };
 
-exports.getCarpoolSearch = async (req, res) => {
-  try {
-    const { date, origin, destination } = req.body;
-    const query =
-      "SELECT * FROM carpool WHERE carpoolDate = ? AND origin = ? AND destination = ?";
-    const values = [date, origin, destination];
+exports.getCarpoolSearch = (req, res) => {
+  const { date, origin, destination } = req.body;
+  const query =
+    "SELECT * FROM carpool WHERE carpoolDate = ? AND origin = ? AND destination = ?";
+  const values = [date, origin, destination];
 
-    const results = await queryAsync(query, values);
-
-    res.status(200).json(results);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+  queryAsync(query, values)
+    .then((results) => {
+      res.status(200).json(results);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).json({ error: "Internal Server Error" });
+    });
 };
 
 exports.getAllCarpool = async (req, res) => {
