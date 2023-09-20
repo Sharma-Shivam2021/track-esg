@@ -1,31 +1,11 @@
+const util = require("util");
 const db = require("../configs/config");
 
-exports.postCarpoolCreate = (req, res) => {
-  const {
-    name,
-    phoneNumber,
-    date,
-    origin,
-    destination,
-    seatsAvailable,
-    details,
-  } = req.body;
+const queryAsync = util.promisify(db.query).bind(db);
 
-  if (
-    !name ||
-    !phoneNumber ||
-    !date ||
-    !origin ||
-    !destination ||
-    !seatsAvailable ||
-    !details
-  ) {
-    res.status(400).json({ error: "All fields must be provided" });
-    return;
-  } else {
-    const query =
-      "INSERT INTO carpool (name,phoneNumber,carpoolDate, origin, destination, seatsAvailable, details) VALUES (?,?,?, ?, ?, ?, ?)";
-    const values = [
+exports.postCarpoolCreate = async (req, res) => {
+  try {
+    const {
       name,
       phoneNumber,
       date,
@@ -33,63 +13,86 @@ exports.postCarpoolCreate = (req, res) => {
       destination,
       seatsAvailable,
       details,
-    ];
+    } = req.body;
 
-    db.query(query, values, (err, results) => {
-      if (err) {
-        res.status(400).json({ error: err.message });
-      } else {
-        const carpoolRequestId = results.insertId;
-        res.status(201).json({ id: carpoolRequestId });
-      }
-    });
+    if (
+      !name ||
+      !phoneNumber ||
+      !date ||
+      !origin ||
+      !destination ||
+      !seatsAvailable ||
+      !details
+    ) {
+      res.status(400).json({ error: "All fields must be provided" });
+      return;
+    } else {
+      const query =
+        "INSERT INTO carpool (name, phoneNumber, carpoolDate, origin, destination, seatsAvailable, details) VALUES (?, ?, ?, ?, ?, ?, ?)";
+      const values = [
+        name,
+        phoneNumber,
+        date,
+        origin,
+        destination,
+        seatsAvailable,
+        details,
+      ];
+
+      const results = await queryAsync(query, values);
+
+      const carpoolRequestId = results.insertId;
+      res.status(201).json({ id: carpoolRequestId });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message });
   }
 };
 
-exports.getCarpoolSearch = (req, res) => {
-  const { date, origin, destination } = req.body;
-  const query =
-    "SELECT * FROM carpool WHERE carpoolDate = ? AND origin = ? AND destination = ?";
-  const values = [date, origin, destination];
+exports.getCarpoolSearch = async (req, res) => {
+  try {
+    const { date, origin, destination } = req.body;
+    const query =
+      "SELECT * FROM carpool WHERE carpoolDate = ? AND origin = ? AND destination = ?";
+    const values = [date, origin, destination];
 
-  db.query(query, values, (err, results) => {
-    if (err) {
-      console.log(err);
-      res.status(500).json({ error: "Internal Server Error" });
-    } else {
-      console.log(results);
-      res.status(200).json(results);
-    }
-  });
+    const results = await queryAsync(query, values);
+
+    res.status(200).json(results);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 };
 
-exports.getAllCarpool = (req, res) => {
-  const query = "SELECT * FROM carpool";
+exports.getAllCarpool = async (req, res) => {
+  try {
+    const query = "SELECT * FROM carpool";
 
-  db.query(query, (err, results) => {
-    if (err) {
-      console.log(err);
-      res.status(500).json({ error: "Internal Server Error" });
-    } else {
-      console.log(results);
-      res.status(200).json(results);
-    }
-  });
+    const results = await queryAsync(query);
+
+    res.status(200).json(results);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 };
 
-exports.deleteCarpool = (req, res) => {
-  const id = req.params.id;
-  const query = "DELETE FROM carpool WHERE carpoolId=?";
-  db.query(query, [id], (err, result) => {
-    if (err) {
-      console.error(err);
-      res.status(500).json({ error: "Internal Server Error" });
-      return;
-    }
+exports.deleteCarpool = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const query = "DELETE FROM carpool WHERE carpoolId = ?";
+    const result = await queryAsync(query, [id]);
+
     if (result.affectedRows === 0) {
       res.status(404).json({ error: "Record not found" });
       return;
     }
-    res.status(200).json({ message: "Entry Deleted Succesfully" });
-  });
+
+    res.status(200).json({ message: "Entry Deleted Successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 };

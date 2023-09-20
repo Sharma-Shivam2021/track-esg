@@ -1,15 +1,33 @@
-const express = require('express');
+const express = require("express");
+
+const authMiddleware = require("../controllers/authMiddleware");
 
 const router = express.Router();
 
-const carpoolController = require('../controllers/carpool');
+const carpoolController = require("../controllers/carpool");
 
-router.post("/create", carpoolController.postCarpoolCreate);
+router.post(
+  "/create",
+  authMiddleware.requireAuth,
+  carpoolController.postCarpoolCreate
+);
 
-router.get("/search", carpoolController.getCarpoolSearch);
+router.get(
+  "/search",
+  authMiddleware.requireAuth,
+  carpoolController.getCarpoolSearch
+);
 
-router.get("/search-all", carpoolController.getAllCarpool);
+router.get(
+  "/search-all",
+  authMiddleware.requireAuth,
+  carpoolController.getAllCarpool
+);
 
-router.delete("/delete/:id", carpoolController.deleteCarpool);
+router.delete(
+  "/delete/:id",
+  authMiddleware.requireAuth,
+  carpoolController.deleteCarpool
+);
 
 module.exports = router;
