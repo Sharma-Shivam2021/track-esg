@@ -1,10 +1,26 @@
 const db = require("../configs/config");
 
 exports.postCarpoolCreate = (req, res) => {
-  const { date, origin, destination, seatsAvailable, details } = req.body;
+  const {
+    name,
+    phoneNumber,
+    date,
+    origin,
+    destination,
+    seatsAvailable,
+    details,
+  } = req.body;
   const query =
-    "INSERT INTO carpool (carpoolDate, origin, destination, seatsAvailable, details) VALUES (?, ?, ?, ?, ?)";
-  const values = [date, origin, destination, seatsAvailable, details];
+    "INSERT INTO carpool (name,phoneNumber,carpoolDate, origin, destination, seatsAvailable, details) VALUES (?,?,?, ?, ?, ?, ?)";
+  const values = [
+    name,
+    phoneNumber,
+    date,
+    origin,
+    destination,
+    seatsAvailable,
+    details,
+  ];
 
   db.query(query, values, (err, results) => {
     if (err) {
